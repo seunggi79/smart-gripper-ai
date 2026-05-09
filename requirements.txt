@@ -1,0 +1,4 @@
+mediapipe==0.10.14
+opencv-python==4.13.0.92
+requests==2.33.1
+python-dotenv==1.0.1
