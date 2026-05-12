@@ -38,27 +38,13 @@ from collections import deque
 import urllib.request
 
 
-# ── MediaPipe 모델 다운로드 ─────────────────────────────
+# ── MediaPipe 설정 ──────────────────────────────────────
 # mp.solutions API는 0.10.30+에서 제거됨 → Tasks API + 별도 모델 파일 필요
 _MODEL_PATH = os.path.join(os.path.dirname(__file__), 'hand_landmarker.task')
 _MODEL_URL = (
     'https://storage.googleapis.com/mediapipe-models/'
     'hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task'
 )
-
-if not os.path.exists(_MODEL_PATH):
-    print("[gesture] 손 인식 모델 다운로드 중... (최초 1회)")
-    urllib.request.urlretrieve(_MODEL_URL, _MODEL_PATH)
-    print("[gesture] 모델 다운로드 완료")
-
-# ── MediaPipe 초기화 ────────────────────────────────────
-_base_options = mp_python.BaseOptions(model_asset_path=_MODEL_PATH)
-_options = mp_vision.HandLandmarkerOptions(
-    base_options=_base_options,
-    running_mode=mp_vision.RunningMode.VIDEO,
-    num_hands=1,
-)
-_landmarker = mp_vision.HandLandmarker.create_from_options(_options)
 
 # 손 연결선 정의 (mp.solutions.hands.HAND_CONNECTIONS 대체)
 _HAND_CONNECTIONS = [
@@ -192,6 +178,19 @@ def run_gesture(gesture_queue, log_queue, stop_event, grip_event):
       stop_event    : main.py에서 생성된 Event - set되면 루프 종료
       grip_event    : client.py가 GRIP_SUCCESS 수신 시 set하는 Event
     """
+    if not os.path.exists(_MODEL_PATH):
+        print("[gesture] 손 인식 모델 다운로드 중... (최초 1회)")
+        urllib.request.urlretrieve(_MODEL_URL, _MODEL_PATH)
+        print("[gesture] 모델 다운로드 완료")
+
+    base_options = mp_python.BaseOptions(model_asset_path=_MODEL_PATH)
+    options = mp_vision.HandLandmarkerOptions(
+        base_options=base_options,
+        running_mode=mp_vision.RunningMode.VIDEO,
+        num_hands=1,
+    )
+    landmarker = mp_vision.HandLandmarker.create_from_options(options)
+
     cap = cv2.VideoCapture(0)  # 0 = 첫 번째 카메라 (USB 웹캠이면 1, 2... 변경)
     if not cap.isOpened():
         print("[gesture] 웹캠 연결 실패!")
@@ -215,7 +214,7 @@ def run_gesture(gesture_queue, log_queue, stop_event, grip_event):
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
         timestamp_ms = int(time.monotonic() * 1000)
-        result = _landmarker.detect_for_video(mp_image, timestamp_ms)
+        result = landmarker.detect_for_video(mp_image, timestamp_ms)
 
         if result.hand_landmarks:
             for hand_landmarks in result.hand_landmarks:
