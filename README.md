@@ -40,6 +40,9 @@ ESP32_PORT=8080
 - `ESP32_IP` : firmware 팀에게 받을 것
 - `.env` 파일은 `.gitignore`에 등록되어 있어 GitHub에 올라가지 않음
 
+> **키 없이도 제스처 인식은 동작합니다.**
+> `DISCORD_WEBHOOK_URL`, `ESP32_IP`를 비워두거나 `.env` 파일 없이 실행해도 웹캠 손 인식과 각도 계산은 정상 동작합니다. 해당 키가 없으면 Discord 알림과 ESP32 전송만 건너뜁니다.
+
 ### 5. 실행
 ```bash
 python main.py
